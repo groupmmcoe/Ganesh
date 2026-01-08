@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OMR Scanner - MCQ Answer Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(to right, #4a6ee0, #6a11cb);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 40px;
+        }
+        
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .upload-section, .results-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .section-title {
+            color: #333;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #4a6ee0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title i {
+            color: #4a6ee0;
+        }
+        
+        .upload-area {
+            border: 3px dashed #4a6ee0;
+            border-radius: 10px;
+            padding: 40px 20px;
+            text-align: center;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area:hover {
+            background: #f0f4ff;
+            transform: translateY(-2px);
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            color: #4a6ee0;
+            margin-bottom: 15px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .preview-container {
+            width: 100%;
+            max-height: 300px;
+            overflow: hidden;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        #imagePreview {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: #4a6ee0;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #3a5ed0;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .quiz-select {
+            margin-bottom: 20px;
+        }
+        
+        .quiz-select label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .quiz-select select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+        }
+        
+        .score-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: none;
+        }
+        
+        .score-number {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #4a6ee0;
+            line-height: 1;
+        }
+        
+        .score-total {
+            font-size: 1.5rem;
+            color: #666;
+        }
+        
+        .percentage {
+            font-size: 1.8rem;
+            color: #28a745;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .results-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .result-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .result-correct {
+            border-left: 5px solid #28a745;
+        }
+        
+        .result-wrong {
+            border-left: 5px solid #dc3545;
+        }
+        
+        .result-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .question-number {
+            background: #4a6ee0;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .result-details {
+            font-size: 14px;
+        }
+        
+        .selected-answer {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .correct-answer {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .status-icon {
+            font-size: 20px;
+        }
+        
+        .correct-icon {
+            color: #28a745;
+        }
+        
+        .wrong-icon {
+            color: #dc3545;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #4a6ee0;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: white;
+            margin-top: 30px;
+        }
+        
+        .instructions {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .instructions h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+            color: #856404;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-scanner"></i> OMR Scanner Pro</h1>
+            <p class="subtitle">Scan your MCQ answer sheets and get instant results</p>
+        </header>
+        
+        <div class="main-content">
+            <!-- Upload Section -->
+            <div class="upload-section">
+                <h2 class="section-title"><i class="fas fa-upload"></i> Upload Answer Sheet</h2>
+                
+                <div class="quiz-select">
+                    <label for="quizSelect"><i class="fas fa-file-alt"></i> Select Quiz:</label>
+                    <select id="quizSelect">
+                        <option value="">-- Select a quiz --</option>
+                        <option value="quiz_001">Mathematics Quiz - Chapter 1</option>
+                        <option value="quiz_002">Science Quiz - Biology</option>
+                        <option value="quiz_003">History Test - World War II</option>
+                        <option value="quiz_004">English Grammar Test</option>
+                    </select>
+                </div>
+                
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                    <h3>Upload Answer Sheet Image</h3>
+                    <p>Drag & drop your image here or click to browse</p>
+                    <p class="file-types">Supports: JPG, PNG, WebP (Max: 5MB)</p>
+                    <input type="file" id="imageInput" class="file-input" accept="image/*">
+                </div>
+                
+                <div class="preview-container" id="previewContainer">
+                    <img id="imagePreview" src="" alt="Preview">
+                </div>
+                
+                <div class="instructions">
+                    <h4><i class="fas fa-info-circle"></i> Instructions:</h4>
+                    <ul>
+                        <li>Use a well-lit environment when taking the photo</li>
+                        <li>Ensure the entire answer sheet is visible</li>
+                        <li>Keep the sheet flat and avoid shadows</li>
+                        <li>Use a dark pen to fill the bubbles completely</li>
+                    </ul>
+                </div>
+                
+                <div class="controls">
+                    <button class="btn btn-primary" id="captureBtn">
+                        <i class="fas fa-camera"></i> Use Camera
+                    </button>
+                    <button class="btn btn-secondary" id="resetBtn">
+                        <i class="fas fa-redo"></i> Reset
+                    </button>
+                    <button class="btn btn-success" id="scanBtn">
+                        <i class="fas fa-play"></i> Scan & Evaluate
+                    </button>
+                </div>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Scanning answer sheet...</p>
+                    <p>This may take a few seconds</p>
+                </div>
+            </div>
+            
+            <!-- Results Section -->
+            <div class="results-section">
+                <h2 class="section-title"><i class="fas fa-chart-line"></i> Results</h2>
+                
+                <div class="score-card" id="scoreCard">
+                    <h3>Your Score</h3>
+                    <div class="score-display">
+                        <span class="score-number" id="score">0</span>
+                        <span class="score-total">/ <span id="total">0</span></span>
+                    </div>
+                    <div class="percentage" id="percentage">0%</div>
+                    <p id="scoreMessage">Keep practicing!</p>
+                </div>
+                
+                <h3>Detailed Results</h3>
+                <div class="results-list" id="resultsList">
+                    <!-- Results will be inserted here dynamically -->
+                    <div class="no-results" id="noResults">
+                        <p style="text-align: center; color: #666; padding: 40px;">
+                            <i class="fas fa-clipboard-list" style="font-size: 48px; margin-bottom: 15px; display: block;"></i>
+                            Upload and scan an answer sheet to see results here
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>© 2024 OMR Scanner Pro | Educational Tool for MCQ Evaluation</p>
+    </footer>
+
+    <!-- Camera Modal -->
+    <div id="cameraModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 800px;">
+            <video id="cameraVideo" autoplay style="width: 100%; border-radius: 10px;"></video>
+            <div style="text-align: center; margin-top: 20px;">
+                <button id="capturePhotoBtn" class="btn btn-primary" style="margin: 0 10px;">
+                    <i class="fas fa-camera"></i> Capture Photo
+                </button>
+                <button id="closeCameraBtn" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Close Camera
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const imageInput = document.getElementById('imageInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const previewContainer = document.getElementById('previewContainer');
+        const imagePreview = document.getElementById('imagePreview');
+        const scanBtn = document.getElementById('scanBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const captureBtn = document.getElementById('captureBtn');
+        const quizSelect = document.getElementById('quizSelect');
+        const loading = document.getElementById('loading');
+        const scoreCard = document.getElementById('scoreCard');
+        const resultsList = document.getElementById('resultsList');
+        const noResults = document.getElementById('noResults');
+        const scoreElement = document.getElementById('score');
+        const totalElement = document.getElementById('total');
+        const percentageElement = document.getElementById('percentage');
+        const scoreMessage = document.getElementById('scoreMessage');
+        
+        // Camera Modal Elements
+        const cameraModal = document.getElementById('cameraModal');
+        const cameraVideo = document.getElementById('cameraVideo');
+        const capturePhotoBtn = document.getElementById('capturePhotoBtn');
+        const closeCameraBtn = document.getElementById('closeCameraBtn');
+        
+        let currentImage = null;
+        let stream = null;
+        
+        // Event Listeners
+        uploadArea.addEventListener('click', () => imageInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.background = '#e8f0fe';
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.background = 'white';
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.background = 'white';
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleImageUpload(file);
+            }
+        });
+        
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleImageUpload(file);
+            }
+        });
+        
+        scanBtn.addEventListener('click', scanOMR);
+        resetBtn.addEventListener('click', resetAll);
+        captureBtn.addEventListener('click', openCamera);
+        capturePhotoBtn.addEventListener('click', capturePhoto);
+        closeCameraBtn.addEventListener('click', closeCamera);
+        
+        // Functions
+        function handleImageUpload(file) {
+            if (file.size > 5 * 1024 * 1024) {
+                alert('File size too large. Please upload an image under 5MB.');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentImage = e.target.result;
+                imagePreview.src = currentImage;
+                previewContainer.style.display = 'block';
+                scanBtn.disabled = false;
+                scanBtn.style.opacity = '1';
+                
+                // Scroll to preview
+                previewContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        async function scanOMR() {
+            if (!currentImage) {
+                alert('Please upload an image first!');
+                return;
+            }
+            
+            if (!quizSelect.value) {
+                alert('Please select a quiz first!');
+                return;
+            }
+            
+            // Show loading
+            loading.style.display = 'block';
+            scanBtn.disabled = true;
+            
+            // Simulate API call (Replace with actual backend call)
+            setTimeout(() => {
+                // Mock results for demo
+                const mockResults = generateMockResults();
+                displayResults(mockResults);
+                
+                // Hide loading
+                loading.style.display = 'none';
+                scanBtn.disabled = false;
+                
+                // Scroll to results
+                scoreCard.scrollIntoView({ behavior: 'smooth' });
+            }, 2000);
+        }
+        
+        function generateMockResults() {
+            const totalQuestions = 10;
+            const correctAnswers = ['A', 'B', 'C', 'D', 'A', 'B', 'C', 'D', 'A', 'B'];
+            const userAnswers = [];
+            const results = [];
+            
+            // Generate random user answers for demo
+            for (let i = 0; i < totalQuestions; i++) {
+                const options = ['A', 'B', 'C', 'D', 'E'];
+                const randomAnswer = options[Math.floor(Math.random() * options.length)];
+                userAnswers.push(randomAnswer);
+                
+                const isCorrect = randomAnswer === correctAnswers[i];
+                
+                results.push({
+                    question: i + 1,
+                    selected: randomAnswer,
+                    correct: correctAnswers[i],
+                    isCorrect: isCorrect
+                });
+            }
+            
+            return {
+                results: results,
+                score: results.filter(r => r.isCorrect).length,
+                total: totalQuestions,
+                percentage: (results.filter(r => r.isCorrect).length / totalQuestions) * 100
+            };
+        }
+        
+        function displayResults(data) {
+            // Update score card
+            scoreElement.textContent = data.score;
+            totalElement.textContent = data.total;
+            percentageElement.textContent = `${data.percentage.toFixed(1)}%`;
+            
+            // Set score message
+            if (data.percentage >= 80) {
+                scoreMessage.textContent = 'Excellent work!';
+                scoreMessage.style.color = '#28a745';
+            } else if (data.percentage >= 60) {
+                scoreMessage.textContent = 'Good job!';
+                scoreMessage.style.color = '#ffc107';
+            } else {
+                scoreMessage.textContent = 'Keep practicing!';
+                scoreMessage.style.color = '#dc3545';
+            }
+            
+            // Show score card
+            scoreCard.style.display = 'block';
+            
+            // Clear and update results list
+            resultsList.innerHTML = '';
+            noResults.style.display = 'none';
+            
+            data.results.forEach(result => {
+                const resultItem = document.createElement('div');
+                resultItem.className = `result-item ${result.isCorrect ? 'result-correct' : 'result-wrong'}`;
+                
+                resultItem.innerHTML = `
+                    <div class="result-info">
+                        <div class="question-number">${result.question}</div>
+                        <div class="result-details">
+                            Selected: <span class="selected-answer">${result.selected}</span> | 
+                            Correct: <span class="correct-answer">${result.correct}</span>
+                        </div>
+                    </div>
+                    <div class="status-icon">
+                        ${result.isCorrect ? 
+                            '<i class="fas fa-check-circle correct-icon"></i>' : 
+                            '<i class="fas fa-times-circle wrong-icon"></i>'
+                        }
+                    </div>
+                `;
+                
+                resultsList.appendChild(resultItem);
+            });
+        }
+        
+        function resetAll() {
+            imageInput.value = '';
+            previewContainer.style.display = 'none';
+            imagePreview.src = '';
+            currentImage = null;
+            scanBtn.disabled = true;
+            scanBtn.style.opacity = '0.7';
+            scoreCard.style.display = 'none';
+            resultsList.innerHTML = '';
+            noResults.style.display = 'block';
+            quizSelect.value = '';
+            loading.style.display = 'none';
+        }
+        
+        async function openCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' } // Use rear camera on mobile
+                });
+                
+                cameraVideo.srcObject = stream;
+                cameraModal.style.display = 'block';
+                
+                // Prevent body scrolling when camera is open
+                document.body.style.overflow = 'hidden';
+            } catch (error) {
+                alert('Unable to access camera. Please check permissions.');
+                console.error('Camera error:', error);
+            }
+        }
+        
+        function capturePhoto() {
+            const canvas = document.createElement('canvas');
+            canvas.width = cameraVideo.videoWidth;
+            canvas.height = cameraVideo.videoHeight;
+            
+            const context = canvas.getContext('2d');
+            context.drawImage(cameraVideo, 0, 0, canvas.width, canvas.height);
+            
+            // Convert to data URL
+            currentImage = canvas.toDataURL('image/jpeg');
+            imagePreview.src = currentImage;
+            previewContainer.style.display = 'block';
+            scanBtn.disabled = false;
+            scanBtn.style.opacity = '1';
+            
+            closeCamera();
+        }
+        
+        function closeCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            
+            cameraModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+        
+        // Initialize
+        scanBtn.disabled = true;
+        scanBtn.style.opacity = '0.7';
+        
+        // Close camera when clicking outside
+        cameraModal.addEventListener('click', (e) => {
+            if (e.target === cameraModal) {
+                closeCamera();
+            }
+        });
+    </script>
+</body>
+</html>
